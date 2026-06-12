@@ -1,0 +1,12 @@
+{
+  "name": "azure-github-actions-demo",
+  "version": "1.0.0",
+  "description": "Azure App Service Deployment Demo",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
