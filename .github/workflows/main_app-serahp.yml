@@ -1,4 +1,4 @@
-# Node.js 웹앱용 Azure App Service 배포 워크플로 (폴더 구조 최적화 버전)
+# Node.js 웹앱용 Azure App Service 배포 워크플로 (문법 오류 수정 버전)
 name: Build and deploy Node.js app to Azure Web App - app-serahp
 
 on:
@@ -15,9 +15,8 @@ jobs:
       # 1. GitHub 저장소 코드 체크아웃
       - uses: actions/checkout@v4
 
-      # 2. Node.js 환경 세팅
+      # 2. Node.js 환경 세팅 (중복된 uses 코드를 수정했습니다)
       - name: Set up Node.js
-        uses: actions/setup-dotnet@v4 # 이전의 .NET 흔적을 지우고 node 세팅을 명시합니다.
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
@@ -30,7 +29,7 @@ jobs:
           npm install
         working-directory: ./code
 
-      # 4. 💡 [핵심 수정] code 폴더 내부의 파일들만! 아티팩트로 업로드
+      # 4. code 폴더 내부의 파일들만! 아티팩트로 업로드
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
