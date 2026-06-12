@@ -1,4 +1,4 @@
-# Node.js 웹앱용 Azure App Service 배포 워크플로
+# Node.js 웹앱용 Azure App Service 배포 워크플로 (폴더 구조 최적화 버전)
 name: Build and deploy Node.js app to Azure Web App - app-serahp
 
 on:
@@ -15,43 +15,44 @@ jobs:
       # 1. GitHub 저장소 코드 체크아웃
       - uses: actions/checkout@v4
 
-      # 2. Node.js 환경 세팅 (가장 안정적인 20 버전 사용)
+      # 2. Node.js 환경 세팅
       - name: Set up Node.js
+        uses: actions/setup-dotnet@v4 # 이전의 .NET 흔적을 지우고 node 세팅을 명시합니다.
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
           cache: 'npm'
           cache-dependency-path: './code/package.json'
 
-      # 3. code 폴더 안으로 이동하여 패키지 설치 및 빌드
-      - name: Install dependencies and build
+      # 3. code 폴더 안에서 패키지 설치
+      - name: Install dependencies
         run: |
           npm install
         working-directory: ./code
 
-      # 4. 배포에 필요한 파일들만 묶어서 아티팩트로 업로드
+      # 4. 💡 [핵심 수정] code 폴더 내부의 파일들만! 아티팩트로 업로드
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: ./code
+          path: ./code/.  # 뒤에 붙은 '/.' 이 code 폴더 자체를 배포하는 문제를 막아줍니다.
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write # OIDC 로그인(JWT)을 위해 필요
+      id-token: write # OIDC 로그인(JWT) 인증을 위해 필요
       contents: read
 
     steps:
-      # 1. 빌드 완료된 Node.js 소스코드 다운로드
+      # 1. 빌드 완료된 Node.js 소스코드 알맹이 다운로드
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: node-app
           path: ./deployment-package
 
-      # 2. Azure 로그인 (기존에 등록해두신 자격 증명 사용)
+      # 2. Azure 로그인 (기존 자격 증명 사용)
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -59,11 +60,11 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_154D2003C69A4D1C8B89B662842D10DE }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06C1B1FA8473488EB39A1260E073DC66 }}
 
-      # 3. Azure Web App에 Node.js 소스코드 배포
+      # 3. Azure Web App의 최상위 루트(wwwroot)에 정확히 배포
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'app-serahp'
           slot-name: 'Production'
-          package: ./deployment-package
+          package: ./deployment-package # 불필요한 하위 폴더 없이 깔끔하게 소스만 전달
