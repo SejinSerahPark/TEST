@@ -15,25 +15,35 @@ jobs:
     permissions:
       contents: read #This is required for actions/checkout
 
+    # 💡 [수정] 모든 dotnet 명령어가 code 폴더 내에서 실행되도록 설정합니다.
+    defaults:
+      run:
+        working-directory: ./code
+
     steps:
       - uses: actions/checkout@v4
 
+      # .NET 환경 세팅
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.x'
 
+      # code 폴더 안에서 빌드 실행
       - name: Build with dotnet
         run: dotnet build --configuration Release
 
+      # [수정] 경로 꼬임을 막기 위해 code 폴더 내부의 ./publish 폴더로 산출물을 뽑습니다.
       - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+        run: dotnet publish -c Release -o ./publish
 
+      # [수정] 빌드된 결과물을 아티팩트로 업로드합니다.
+      # defaults 설정 때문에 실제 경로는 ./code/publish 가 됩니다.
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          name: net-app
+          path: ./code/publish
 
   deploy:
     runs-on: ubuntu-latest
@@ -43,10 +53,12 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
+      # [수정] 빌드 단계에서 업로드한 아티팩트를 다운로드합니다.
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
+          name: net-app
+          path: ./deployment-package # 다운로드 받을 임시 폴더 지정
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -55,11 +67,11 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_154D2003C69A4D1C8B89B662842D10DE }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06C1B1FA8473488EB39A1260E073DC66 }}
 
+      # [수정] 다운로드 받은 폴더를 지정하여 Azure에 배포합니다.
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'app-serahp'
           slot-name: 'Production'
-          package: .
-          
+          package: ./deployment-package # . 대신 정확한 패키지 경로 지정   
