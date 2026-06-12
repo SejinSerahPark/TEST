@@ -1,4 +1,4 @@
-# Node.js 웹앱용 Azure App Service 배포 워크플로 (문법 오류 수정 버전)
+# Node.js 웹앱용 Azure App Service 배포 워크플로 (경로 오류 수정 버전)
 name: Build and deploy Node.js app to Azure Web App - app-serahp
 
 on:
@@ -15,7 +15,7 @@ jobs:
       # 1. GitHub 저장소 코드 체크아웃
       - uses: actions/checkout@v4
 
-      # 2. Node.js 환경 세팅 (중복된 uses 코드를 수정했습니다)
+      # 2. Node.js 환경 세팅
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -29,12 +29,12 @@ jobs:
           npm install
         working-directory: ./code
 
-      # 4. code 폴더 내부의 파일들만! 아티팩트로 업로드
+      # 4. 💡 [수정] 와일드카드(/**)를 사용하여 code 폴더 내부의 파일들만 업로드합니다.
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: ./code/.  # 뒤에 붙은 '/.' 이 code 폴더 자체를 배포하는 문제를 막아줍니다.
+          path: code/** # ./code/. 대신 code 폴더 내부 전체를 뜻하는 패턴을 사용합니다.
 
   deploy:
     runs-on: ubuntu-latest
@@ -44,7 +44,7 @@ jobs:
       contents: read
 
     steps:
-      # 1. 빌드 완료된 Node.js 소스코드 알맹이 다운로드
+      # 1. 빌드 완료된 Node.js 소스코드 다운로드
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
@@ -66,4 +66,4 @@ jobs:
         with:
           app-name: 'app-serahp'
           slot-name: 'Production'
-          package: ./deployment-package # 불필요한 하위 폴더 없이 깔끔하게 소스만 전달
+          package: ./deployment-package
